@@ -24,12 +24,11 @@ import com.lufin.server.classroom.dto.LoginWithClassResponse;
 import com.lufin.server.classroom.service.ClassroomCommandService;
 import com.lufin.server.common.dto.ApiResponse;
 import com.lufin.server.common.exception.BusinessException;
-import com.lufin.server.common.utils.TokenUtils;
 import com.lufin.server.dashboard.dto.BalanceDto;
 import com.lufin.server.member.domain.Member;
 import com.lufin.server.member.support.UserContext;
 
-import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +43,6 @@ public class AuthController {
 	private final ClassroomCommandService classroomService;
 	private final RefreshTokenService refreshTokenService;
 	private final AccountService accountService;
-
-	private final TokenUtils tokenUtils;
 
 	@PostMapping("/login")
 	public ResponseEntity<ApiResponse<LoginWithAssetResponse>> login(@Valid @RequestBody LoginRequest request) {
@@ -97,26 +94,12 @@ public class AuthController {
 	}
 
 	@GetMapping("/my")
-	public ResponseEntity<ApiResponse<BalanceDto.balanceDto>> getMyBalance(
-		@RequestHeader("Authorization") String bearerToken
+	public ResponseEntity<ApiResponse<BalanceDto.balanceDto>> getMyBalance(HttpServletRequest request
 	) {
-		if (!StringUtils.hasText(bearerToken) || !bearerToken.startsWith("Bearer ")) {
-			return ResponseEntity.badRequest().body(ApiResponse.failure(INVALID_AUTH_HEADER));
-		}
+		Integer classId = (Integer)request.getAttribute("classId");
+		Member member = UserContext.get();
 
-		try {
-			Claims claim = tokenUtils.extractClaims(bearerToken);
-			Integer memberId = Integer.parseInt(claim.getSubject());
-			Integer classId = Integer.parseInt((String)claim.get("CLASS_ID"));
-
-			int balance = accountService.getCashBalance(memberId, classId);
-			return ResponseEntity.status(200).body(ApiResponse.success(new BalanceDto.balanceDto(balance)));
-
-		} catch (BusinessException e) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-				.body(ApiResponse.failure(INVALID_TOKEN));
-		}
-
+		int balance = accountService.getCashBalance(member.getId(), classId != null ? classId : 0);
+		return ResponseEntity.ok(ApiResponse.success(new BalanceDto.balanceDto(balance)));
 	}
-
 }
