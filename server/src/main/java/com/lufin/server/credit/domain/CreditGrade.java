@@ -11,7 +11,7 @@ public enum CreditGrade {
 	B_PLUS(80, 84, "B+"),
 	B(75, 79, "B"),
 	B_MINUS(70, 74, "B-"),
-	C_PLUS(65, 65, "C+"),
+	C_PLUS(65, 69, "C+"),
 	C(60, 64, "C"),
 	C_MINUS(55, 59, "C-"),
 	D_PLUS(50, 54, "D+"),
